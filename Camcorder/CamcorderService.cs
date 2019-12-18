@@ -78,11 +78,11 @@ namespace Camcorder {
                 }
             }
 
-            WatchdogTimer = new Timer(5000.0);
+            WatchdogTimer = new Timer(5000);
             WatchdogTimer.Elapsed += ProcessWatchdog;
             WatchdogTimer.Start();
 
-            CleanupTimer = new Timer(new TimeSpan(1, 0, 0).TotalMilliseconds);
+            CleanupTimer = new Timer(60 * 60 * 1000);
             CleanupTimer.Elapsed += Cleanup;
             CleanupTimer.Start();
         }
@@ -92,10 +92,14 @@ namespace Camcorder {
                 var camera = RecorderProcesses[i];
                 // restart all processes which have exited
                 camera.process.Refresh();
-                if (camera.process.HasExited && camera.restartCount < 5) {
+                if (camera.process.HasExited && camera.restartCount < 50) {
                     EventLog.WriteEntry($"Process for camera {camera.config.Name} #{camera.id} has died. Restarting.");
                     camera.process.Start();
                     camera.restartCount++;
+                } else {
+                    if (camera.restartCount <= 0) continue;
+                    camera.restartCount--;
+                    RecorderProcesses[i] = camera;
                 }
             }
         }
