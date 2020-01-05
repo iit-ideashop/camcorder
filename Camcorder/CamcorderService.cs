@@ -8,7 +8,7 @@ using System.Timers;
 namespace Camcorder {
     public partial class CamcorderService : ServiceBase {
 
-        public const string ConfigLocation = @"C:\Program Files\Camcorder\config.json";
+        public const string ConfigLocation = @"%ProgramData%\Camcorder\config.json";
         public Config AppConfig;
         public List<(CameraConfig config, Process process, int id, int restartCount)> RecorderProcesses;
         public Timer WatchdogTimer, CleanupTimer;
@@ -37,11 +37,16 @@ namespace Camcorder {
                         }
                     }
                 };
-                defaultConfig.ToFile(ConfigLocation);
-                EventLog.WriteEntry($"Failed to open configuration file at {ConfigLocation}",
+                EventLog.WriteEntry($"Failed to open configuration file at {ConfigLocation}.",
                     EventLogEntryType.Error);
+                try {
+                    defaultConfig.ToFile(ConfigLocation);
+                } catch (IOException) {
+                    EventLog.WriteEntry($"Failed to write default config file at {ConfigLocation}.", EventLogEntryType.Error);
+                }
                 this.ExitCode = 1;
                 Stop();
+                return;
             }
 
             // start processes for cameras
